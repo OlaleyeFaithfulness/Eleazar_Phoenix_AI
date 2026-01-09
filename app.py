@@ -144,26 +144,38 @@ def phoenix_ai_response(user_input, session_id, fact_session):
     )
     return response.content
 
-def chat_wrapper(message, history=[]):
-    """
-    Each Gradio session gets its own session_id and FactSession.
-    Memory and used facts are reset when the session is new or refreshed.
-    """
-    session_key = id(history)  # unique per session; changes on refresh
+sessions = {}  # maps session_uuid -> {"session_id": str, "fact_session": FactSession()}
 
-    if session_key not in sessions:
-        # New session
-        sessions[session_key] = {
+def chat_wrapper(user_message, history=[]):
+    """
+    history: Gradio Chatbot history list
+    Each session gets its own session_id and FactSession
+    """
+    # First message of a new session
+    if not history:
+        session_uuid = str(uuid.uuid4())
+        sessions[session_uuid] = {
             "session_id": str(uuid.uuid4()),
             "fact_session": FactSession()
         }
+        # Store UUID in the list for tracking
+        history.append([None, None])  # placeholder to store session UUID
+        history[0][0] = session_uuid  # store session UUID
+    else:
+        session_uuid = history[0][0]
 
-    session_data = sessions[session_key]
+    session_data = sessions.get(session_uuid)
     session_id = session_data["session_id"]
     fact_session = session_data["fact_session"]
 
-    bot_response = phoenix_ai_response(message, session_id, fact_session)
-    return bot_response, history
+    # Get AI response
+    ai_response = phoenix_ai_response(user_message, session_id, fact_session)
+
+    # Append user and AI messages
+    history.append([user_message, ai_response])
+
+    return history, history
+
 
 # -----------------------------
 # Gradio UI and theming
