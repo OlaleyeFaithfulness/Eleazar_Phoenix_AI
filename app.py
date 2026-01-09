@@ -255,80 +255,89 @@ def phoenix_ai_response(user_input, session_id=None):
 import gradio as gr
 import uuid
 
-# Your existing backend
+# Wrapper function
 def chat_wrapper(message, history):
     if not hasattr(chat_wrapper, "session_id"):
         chat_wrapper.session_id = str(uuid.uuid4())
+    
     bot_response, _ = phoenix_ai_response(message, chat_wrapper.session_id)
     return bot_response
 
-# CSS for message styling
+# Theme for buttons, still Soft
+theme = gr.themes.Soft(
+    primary_hue="orange",
+    secondary_hue="amber",
+    neutral_hue="slate",
+).set(
+    button_primary_background_fill="*primary_600",
+    button_primary_background_fill_hover="*primary_700",
+)
+
+# CSS combining the old colors/alignment with ChatInterface
 custom_css = """
-.user {
-    background: #00e5ff;
-    color: #000;
-    border-radius: 12px;
-    padding: 8px 12px;
-    margin: 2px 0;
-    align-self: flex-end;
-    max-width: 75%;
+/* Input box */
+.gradio-container .chat-input textarea {
+    background-color: #1f1f1f !important;
+    color: #fff !important;
+    border-radius: 12px !important;
+    padding: 10px !important;
 }
-.bot {
-    background: #ffd700;
-    color: #000;
-    border-radius: 12px;
-    padding: 8px 12px;
-    margin: 2px 0;
-    align-self: flex-start;
-    max-width: 75%;
+
+/* AI messages (left aligned) */
+.gradio-container .message[data-role="assistant"] {
+    background-color: #ffd700 !important; /* old gold */
+    color: #000 !important;
+    padding: 12px;
+    border-radius: 20px;
+    margin: 5px 0;
+    text-align: left;
+    max-width: 70%;
 }
+
+/* User messages (right aligned) */
+.gradio-container .message[data-role="user"] {
+    background-color: #00e5ff !important; /* cyan */
+    color: #000 !important;
+    padding: 12px;
+    border-radius: 20px;
+    margin: 5px 0;
+    text-align: left;
+    max-width: 70%;
+    margin-left: auto; /* push to right */
+}
+
+/* Description */
+.gradio-container .description {
+    color: #f97316 !important;
+    line-height: 1.5em;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+/* Footer (add as part of description) */
 """
 
-description_text = """
-🎂 **A conversational AI celebrating the life and accomplishments of  
-the man, the myth, the legend — Eleazar Olumuyiwa Ogunmilade.**
+# Description + footer
+description_text = (
+    "🎂 A conversational AI Celebrating the life and accomplishments of the man, "
+    "the myth, the legend, Eleazar Olumuyiwa Ogunmilade.\n\n"
+    "Interact and learn more about his incredible journey.\n\n"
+    "Developed by Olaleye Faithfulness Ibukun"
+)
 
-Interact and learn more about his incredible journey.
-"""
+# Build ChatInterface (keeping it simple)
+demo = gr.ChatInterface(
+    fn=chat_wrapper,
+    title="Eleazar Phoenix AI 🎂",
+    description=description_text,
+    examples=[
+        "Tell me a fact about Mr Eleazar",
+        "When is Mr Ogunmilades birthday",
+        "Who created you?"
+    ],
+    theme=theme,
+    css=custom_css,
+    type="messages"
+)
 
-footer_text = "Developed by Olaleye Faithfulness Ibukun"
-
-with gr.Blocks(css=custom_css) as demo:
-    gr.Markdown("# 🎂 Eleazar Phoenix AI")
-    gr.Markdown(description_text)
-
-    chatbot = gr.Chatbot(elem_id="chatbot-window").style(height=450)
-
-    with gr.Row():
-        msg = gr.Textbox(
-            placeholder="Type your message here...",
-            show_label=False,
-            interactive=True,
-        )
-        send_btn = gr.Button("Send")
-
-    # suggested prompts
-    with gr.Accordion("Suggested Prompts", open=True):
-        gr.Markdown(
-            "- Tell me a fact about Mr Eleazar\n"
-            "- When is Mr Ogunmilade’s birthday?\n"
-            "- Who created you?\n"
-            "- Give me a blessing for him\n"
-            "- What’s something inspiring about his life?"
-        )
-
-    gr.Markdown(f"---\n*{footer_text}*")
-
-    def handle_send(user_text, chat_history):
-        if not user_text.strip():
-            return chat_history, ""
-        # send to backend
-        ai_text = chat_wrapper(user_text, chat_history)
-        # append to chat history
-        chat_history = chat_history + [(user_text, ai_text)]
-        return chat_history, ""
-
-    send_btn.click(handle_send, [msg, chatbot], [chatbot, msg])
-    msg.submit(handle_send, [msg, chatbot], [chatbot, msg])
-
-demo.launch()
+demo.launch(inline=True, show_error=True)
