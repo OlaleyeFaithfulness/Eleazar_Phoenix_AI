@@ -252,7 +252,7 @@ def phoenix_ai_response(user_input, session_id=None):
 
 
 
-  import gradio as gr
+import gradio as gr
 import uuid
 
 # Your existing backend
