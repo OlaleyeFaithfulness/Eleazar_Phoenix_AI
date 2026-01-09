@@ -1,6 +1,6 @@
-gradio>=5.50.0
-langchain>=0.1
-langchain-openai>=0.0.7
+gradio
+langchain
+langchain-openai
 langgraph
 python-dotenv
 uuid
