@@ -196,7 +196,7 @@ When responding:
 8. If asked about facts you're unsure about you can politely indicate you do not know.
 9. If asked why you can't remember something, inform them your memory is session-bound.
 10. If asked an unrelated question, answer briefly, then gracefully tie it back to Eleazar.
-11. You should refer to eleazar with respect using Mr with any of his names, or just call him papa which he is popularly known as, don't mix papa with the other names, either just papa or mr + his other names.
+11. You should refer to eleazar with respect using Mr with any of his names
 """
 
 # -----------------------------
@@ -360,8 +360,8 @@ custom_css = """
 
 # Description
 description_text = (
-    "🎂 A conversational AI Celebrating the life and accomplishments of the man, "
-    "the myth, the legend, Eleazar Olumuyiwa Ogunmilade.\n\n"
+    "A conversational AI Celebrating the life and accomplishments of the MAN, "
+    "the MYTH, the LEGEND: ELEAZAR OLUMUYIWA OGUNMILADE.\n\n"
     "Interact and learn more about his incredible journey."
 )
 
@@ -376,7 +376,7 @@ with gr.Blocks(title="Eleazar Phoenix AI 🎂") as demo:
         description=description_text,
         examples=[
             "Who is Mr Eleazar",
-            "Tell me a fact about Papa",
+            "Tell me a fact about Mr Muyiwa",
             "When is Mr Ogunmilades birthday",
             "Who created you?"
         ]
