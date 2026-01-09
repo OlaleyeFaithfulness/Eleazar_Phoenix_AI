@@ -252,11 +252,6 @@ def phoenix_ai_response(user_input, session_id=None):
 
 
 
-
-
-
-
-
 import gradio as gr
 import uuid
 
@@ -372,8 +367,8 @@ description_text = (
 # Footer
 footer_text = "Developed by Olaleye Faithfulness Ibukun"
 
-# Wrap in Blocks to use CSS on older Gradio versions
-with gr.Blocks(css=custom_css, title="Eleazar Phoenix AI 🎂") as demo:
+# ChatInterface for Gradio 6.0
+with gr.Blocks(title="Eleazar Phoenix AI 🎂") as demo:
     gr.ChatInterface(
         fn=chat_wrapper,
         title="Eleazar Phoenix AI 🎂",
@@ -382,11 +377,14 @@ with gr.Blocks(css=custom_css, title="Eleazar Phoenix AI 🎂") as demo:
             "Tell me a fact about Mr Eleazar",
             "When is Mr Ogunmilades birthday",
             "Who created you?"
-        ],
-        type="messages"
+        ]
     )
     
     # Add footer using HTML
     gr.HTML(f'<div class="footer-text">{footer_text}</div>')
 
-demo.launch()
+demo.launch(css=custom_css)
+
+
+
+
