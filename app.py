@@ -252,140 +252,83 @@ def phoenix_ai_response(user_input, session_id=None):
 
 
 
-import gradio as gr
+  import gradio as gr
 import uuid
 
-# Wrapper for your existing phoenix_ai_response
-def chat_wrapper(user_input, session_id):
-    if not session_id:
-        session_id = str(uuid.uuid4())
-    response, session_id = phoenix_ai_response(user_input, session_id)
-    return response, session_id, ""  # "" clears the input box
+# Your existing backend
+def chat_wrapper(message, history):
+    if not hasattr(chat_wrapper, "session_id"):
+        chat_wrapper.session_id = str(uuid.uuid4())
+    bot_response, _ = phoenix_ai_response(message, chat_wrapper.session_id)
+    return bot_response
 
-# CSS for styling
+# CSS for message styling
 custom_css = """
-/* Input box */
-.gradio-container textarea {
-    background-color: #1f1f1f !important;
-    color: #fff !important;
-    border-radius: 12px !important;
-    padding: 10px !important;
-}
-
-/* Send button */
-.gradio-container button {
-    background-color: #ffd700 !important;
-    color: #000 !important;
-    font-weight: bold;
-    border-radius: 12px !important;
-    padding: 10px 20px;
-}
-
-/* Chat messages */
-.user-msg {
-    background-color: #00e5ff;
+.user {
+    background: #00e5ff;
     color: #000;
-    padding: 12px;
-    border-radius: 20px;
-    margin: 5px 0;
-    max-width: 70%;
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin: 2px 0;
     align-self: flex-end;
+    max-width: 75%;
 }
-
-.ai-msg {
-    background-color: #ffd700;
+.bot {
+    background: #ffd700;
     color: #000;
-    padding: 12px;
-    border-radius: 20px;
-    margin: 5px 0;
-    max-width: 70%;
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin: 2px 0;
     align-self: flex-start;
-}
-
-/* Chat container */
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    max-height: 500px;
-    padding: 15px;
-    border-radius: 15px;
-    border: 2px solid #444;
-    background-color: #2a2a2a;
-    scroll-behavior: smooth;
-}
-
-/* Header / Title */
-.title {
-    text-align: center;
-    font-size: 36px;
-    font-weight: bold;
-    color: #ffd700;
-    margin: 5px 0;
-}
-
-.subtitle {
-    text-align: center;
-    font-size: 18px;
-    color: #ccc;
-    margin-bottom: 15px;
-}
-
-/* Description */
-.description {
-    color: #f97316;
-    font-weight: 500;
-    line-height: 1.5em;
-    margin-bottom: 20px;
+    max-width: 75%;
 }
 """
 
-# Description text
-description_text = (
-    "🎂 A conversational AI Celebrating the life and accomplishments of the man, "
-    "the myth, the legend, Eleazar Olumuyiwa Ogunmilade.\n\n"
-    "Interact and learn more about his incredible journey.\n\n"
-    "Developed by Olaleye Faithfulness Ibukun"
-)
+description_text = """
+🎂 **A conversational AI celebrating the life and accomplishments of  
+the man, the myth, the legend — Eleazar Olumuyiwa Ogunmilade.**
 
-# Build UI
+Interact and learn more about his incredible journey.
+"""
+
+footer_text = "Developed by Olaleye Faithfulness Ibukun"
+
 with gr.Blocks(css=custom_css) as demo:
-    gr.Markdown("<div class='title'>🎂 Eleazar Phoenix AI</div>")
-    gr.Markdown("<div class='subtitle'>The Man, The Myth, The Legend</div>")
-    gr.Markdown(f"<div class='description'>{description_text}</div>")
+    gr.Markdown("# 🎂 Eleazar Phoenix AI")
+    gr.Markdown(description_text)
 
-    # Chat display
-    chat_display = gr.HTML("<div class='chat-container' id='chat-container'></div>")
+    chatbot = gr.Chatbot(elem_id="chatbot-window").style(height=450)
 
-    # User input
-    user_input = gr.Textbox(placeholder="Type your message here...")
-    send_btn = gr.Button("Send")
+    with gr.Row():
+        msg = gr.Textbox(
+            placeholder="Type your message here...",
+            show_label=False,
+            interactive=True,
+        )
+        send_btn = gr.Button("Send")
 
-    # Session state
-    session_state = gr.State(value=str(uuid.uuid4()))
+    # suggested prompts
+    with gr.Accordion("Suggested Prompts", open=True):
+        gr.Markdown(
+            "- Tell me a fact about Mr Eleazar\n"
+            "- When is Mr Ogunmilade’s birthday?\n"
+            "- Who created you?\n"
+            "- Give me a blessing for him\n"
+            "- What’s something inspiring about his life?"
+        )
 
-    # Message handler
-    def send_message(user_text, session_id, chat_html):
+    gr.Markdown(f"---\n*{footer_text}*")
+
+    def handle_send(user_text, chat_history):
         if not user_text.strip():
-            return chat_html, session_id, ""
+            return chat_history, ""
+        # send to backend
+        ai_text = chat_wrapper(user_text, chat_history)
+        # append to chat history
+        chat_history = chat_history + [(user_text, ai_text)]
+        return chat_history, ""
 
-        response, session_id = phoenix_ai_response(user_text, session_id)
+    send_btn.click(handle_send, [msg, chatbot], [chatbot, msg])
+    msg.submit(handle_send, [msg, chatbot], [chatbot, msg])
 
-        # Append user + AI messages
-        new_html = chat_html + f"""
-        <div class='user-msg'>{user_text}</div>
-        <div class='ai-msg'>{response}</div>
-        <script>
-            var container = document.getElementById('chat-container');
-            container.scrollTop = container.scrollHeight;
-        </script>
-        """
-        return new_html, session_id, ""
-
-    # Connect input box + button
-    send_btn.click(send_message, [user_input, session_state, chat_display],
-                   [chat_display, session_state, user_input])
-    user_input.submit(send_message, [user_input, session_state, chat_display],
-                      [chat_display, session_state, user_input])
-
-demo.launch(css=custom_css)
+demo.launch()
