@@ -335,7 +335,6 @@ demo = gr.ChatInterface(
         "When is Mr Ogunmilades birthday",
         "Who created you?"
     ],
-    theme=theme,
     css=custom_css,
     type="messages"
 )
