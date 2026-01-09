@@ -249,6 +249,9 @@ def phoenix_ai_response(user_input, session_id=None):
 
 
 
+
+
+
 import gradio as gr
 import uuid
 
@@ -259,16 +262,6 @@ def chat_wrapper(message, history):
     
     bot_response, _ = phoenix_ai_response(message, chat_wrapper.session_id)
     return bot_response
-
-# Theme for buttons
-theme = gr.themes.Soft(
-    primary_hue="orange",
-    secondary_hue="amber",
-    neutral_hue="slate",
-).set(
-    button_primary_background_fill="*primary_600",
-    button_primary_background_fill_hover="*primary_700",
-)
 
 # CSS: user/AI colors + auto scroll
 custom_css = """
@@ -317,7 +310,6 @@ custom_css = """
 }
 """
 
-# Description + footer
 description_text = (
     "🎂 A conversational AI Celebrating the life and accomplishments of the man, "
     "the myth, the legend, Eleazar Olumuayiwa Ogunmilade.\n\n"
@@ -325,22 +317,21 @@ description_text = (
     "Developed by Olaleye Faithfulness Ibukun"
 )
 
-# ChatInterface
-demo = gr.ChatInterface(
-    fn=chat_wrapper,
-    title="Eleazar Phoenix AI 🎂",
-    description=description_text,
-    examples=[
-        "Tell me a fact about Mr Eleazar",
-        "When is Mr Ogunmilades birthday",
-        "Who created you?"
-    ],
-    css=custom_css,
-    type="messages"
-)
+# Wrap in Blocks to apply CSS (HF-compatible)
+with gr.Blocks(css=custom_css) as demo:
+    gr.ChatInterface(
+        fn=chat_wrapper,
+        title="Eleazar Phoenix AI 🎂",
+        description=description_text,
+        examples=[
+            "Tell me a fact about Mr Eleazar",
+            "When is Mr Ogunmilades birthday",
+            "Who created you?"
+        ],
+        type="messages"
+    )
 
-demo.launch(inline=True, show_error=True)
-
+demo.launch()
 
 
 
