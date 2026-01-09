@@ -248,10 +248,6 @@ def phoenix_ai_response(user_input, session_id=None):
 
 
 
-
-
-
-
 import gradio as gr
 import uuid
 
@@ -263,7 +259,7 @@ def chat_wrapper(message, history):
     bot_response, _ = phoenix_ai_response(message, chat_wrapper.session_id)
     return bot_response
 
-# Theme for buttons, still Soft
+# Theme
 theme = gr.themes.Soft(
     primary_hue="orange",
     secondary_hue="amber",
@@ -273,7 +269,7 @@ theme = gr.themes.Soft(
     button_primary_background_fill_hover="*primary_700",
 )
 
-# CSS combining the old colors/alignment with ChatInterface
+# Custom CSS - improved from your original
 custom_css = """
 /* Input box */
 .gradio-container .chat-input textarea {
@@ -281,51 +277,93 @@ custom_css = """
     color: #fff !important;
     border-radius: 12px !important;
     padding: 10px !important;
+    border: 2px solid #ff6b35 !important;
 }
 
 /* AI messages (left aligned) */
 .gradio-container .message[data-role="assistant"] {
-    background-color: #ffd700 !important; /* old gold */
+    background-color: #ffd700 !important;
     color: #000 !important;
-    padding: 12px;
-    border-radius: 20px;
-    margin: 5px 0;
-    text-align: left;
-    max-width: 70%;
+    padding: 12px 16px !important;
+    border-radius: 18px !important;
+    margin: 8px 0 !important;
+    text-align: left !important;
+    max-width: 75% !important;
+    word-wrap: break-word !important;
+    line-height: 1.5 !important;
 }
 
 /* User messages (right aligned) */
 .gradio-container .message[data-role="user"] {
-    background-color: #00e5ff !important; /* cyan */
+    background-color: #00e5ff !important;
     color: #000 !important;
-    padding: 12px;
-    border-radius: 20px;
-    margin: 5px 0;
-    text-align: left;
-    max-width: 70%;
-    margin-left: auto; /* push to right */
+    padding: 12px 16px !important;
+    border-radius: 18px !important;
+    margin: 8px 0 !important;
+    text-align: left !important;
+    max-width: 75% !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    word-wrap: break-word !important;
+    line-height: 1.5 !important;
 }
 
 /* Description */
 .gradio-container .description {
-    color: #f97316 !important;
-    line-height: 1.5em;
-    margin-bottom: 20px;
-    font-weight: 500;
+    color: #ff6b35 !important;
+    line-height: 1.6 !important;
+    margin-bottom: 20px !important;
+    font-weight: 500 !important;
+    font-size: 1.05em !important;
 }
 
-/* Footer (add as part of description) */
+/* Examples */
+.gradio-container .examples button {
+    background-color: #ff6b35 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    padding: 10px 15px !important;
+    font-weight: 500 !important;
+}
+
+.gradio-container .examples button:hover {
+    background-color: #e55100 !important;
+}
+
+/* Chat container */
+.gradio-container .chatbot {
+    border-radius: 12px !important;
+    border: 2px solid #ff6b35 !important;
+}
+
+/* Title styling */
+.gradio-container h1 {
+    color: #ff6b35 !important;
+    font-weight: bold !important;
+}
+
+/* Footer styling */
+.gradio-container .footer-text {
+    text-align: center !important;
+    color: #666 !important;
+    font-size: 0.9em !important;
+    margin-top: 20px !important;
+    border-top: 1px solid #ddd !important;
+    padding-top: 15px !important;
+}
 """
 
-# Description + footer
+# Description
 description_text = (
     "🎂 A conversational AI Celebrating the life and accomplishments of the man, "
     "the myth, the legend, Eleazar Olumuyiwa Ogunmilade.\n\n"
-    "Interact and learn more about his incredible journey.\n\n"
-    "Developed by Olaleye Faithfulness Ibukun"
+    "Interact and learn more about his incredible journey."
 )
 
-# Build ChatInterface (keeping it simple)
+# Footer
+footer_text = "Developed by Olaleye Faithfulness Ibukun"
+
+# ChatInterface with your design
 demo = gr.ChatInterface(
     fn=chat_wrapper,
     title="Eleazar Phoenix AI 🎂",
@@ -340,4 +378,8 @@ demo = gr.ChatInterface(
     type="messages"
 )
 
-demo.launch(inline=True, show_error=True)
+# Add footer using HTML
+with demo:
+    gr.HTML(f'<div class="footer-text">{footer_text}</div>')
+
+demo.launch()
