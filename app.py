@@ -1,4 +1,3 @@
-!pip install -U langchain langchain-openai langgraph
 
 from langchain_openai import ChatOpenAI
 
@@ -163,21 +162,6 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import random
 import uuid
-
-class FactSession:
-    def __init__(self):
-        self.used_fact_ids = set()
-    
-    def get_unused_fact(self):
-        unused = [f for f in facts if f["fact_id"] not in self.used_fact_ids]
-        if not unused:
-            return None  # all facts used
-        chosen = random.choice(unused)
-        self.used_fact_ids.add(chosen["fact_id"])
-        return chosen
-
-session_facts = FactSession()
-
 
 
 class FactSession:
