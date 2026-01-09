@@ -375,9 +375,9 @@ with gr.Blocks(title="Eleazar Phoenix AI 🎂") as demo:
         title="Eleazar Phoenix AI 🎂",
         description=description_text,
         examples=[
-            "Who is Mr Eleazar",
-            "Tell me a fact about Mr Muyiwa",
-            "When is Mr Ogunmilades birthday",
+            "Who is Mr Ogunmilade",
+            "Tell me a fact about Mr Eleazar",
+            "What is your purpose",
             "Who created you?"
         ]
     )
