@@ -257,12 +257,15 @@ import gradio as gr
 import uuid
 
 # Wrapper function
-def chat_wrapper(message, history):
-    if not hasattr(chat_wrapper, "session_id"):
-        chat_wrapper.session_id = str(uuid.uuid4())
-    
-    bot_response, _ = phoenix_ai_response(message, chat_wrapper.session_id)
-    return bot_response
+def chat_wrapper(message, history=[]):
+    # history here is provided by Gradio per user session
+    session_id = history.session_id if hasattr(history, "session_id") else str(uuid.uuid4())
+    if not hasattr(history, "session_id"):
+        history.session_id = session_id
+
+    bot_response, _ = phoenix_ai_response(message, session_id)
+    return bot_response, history
+
 
 # Theme
 theme = gr.themes.Soft(
