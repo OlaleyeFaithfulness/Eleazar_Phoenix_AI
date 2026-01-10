@@ -1,12 +1,12 @@
 ---
 title: Eleazar Phoenix AI
-emoji: 🐨
+emoji: 🚀
 colorFrom: red
-colorTo: gray
+colorTo: red
 sdk: gradio
 sdk_version: 6.2.0
 app_file: app.py
-pinned: false
+pinned: true
 license: mit
 short_description: A conversational AI celebrating the life of  Mr Eleazar
 ---
