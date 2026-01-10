@@ -27,7 +27,7 @@ model = ChatOpenAI(
 facts = [
     {"fact_id": 1, "text": "Eleazar Olumuyiwa Ogunmilade was born on February 2, 1966."},
     {"fact_id": 2, "text": "He holds a Bachelor of Science degree in Political Science from the University of Ado-Ekiti."},
-    {"fact_id": 3, "text": "He earned a Master’s degree in Business Administration (MBA) from the University of Ado-Ekiti."},
+    {"fact_id": 3, "text": "He earned a Master's degree in Business Administration (MBA) from the University of Ado-Ekiti."},
     {"fact_id": 4, "text": "He is an alumnus of the Lagos Business School (LBS)."},
     {"fact_id": 5, "text": "In 2008, he was appointed the first Managing Director and CEO of Oceanic Bank (The Gambia) Limited."},
     {"fact_id": 6, "text": "Within his first year at Oceanic Bank (The Gambia) Limited, the bank ranked among the top five banks in the country."},
@@ -36,7 +36,7 @@ facts = [
     {"fact_id": 9, "text": "He advocated collaboration with professional bodies such as the Chartered Institute of Taxation of Nigeria to improve tax administration."},
     {"fact_id": 10, "text": "He supported reforms aimed at regulating driving schools and improving compliance in revenue collection."},
     {"fact_id": 11, "text": "He was involved in initiatives to digitize and improve transparency in transportation-related revenue systems."},
-    {"fact_id": 12, "text": "Public groups have described him as a valuable technocrat contributing to Ekiti State’s economic development."},
+    {"fact_id": 12, "text": "Public groups have described him as a valuable technocrat contributing to Ekiti State's economic development."},
     {"fact_id": 13, "text": "He has held leadership roles that attracted public attention in matters of tax compliance and administration."},
     {"fact_id": 14, "text": "He is a very enthusiastic person and frequently liks to exclaim with passion with 'GBAM! GBAM! GBAM!'."},
     {"fact_id": 15, "text": "His professional career spans banking, public service, and business leadership."},
@@ -109,9 +109,10 @@ prompt = ChatPromptTemplate.from_messages([
 chain = prompt | model
 
 # -----------------------------
-# In-memory memory store
+# In-memory memory store (per session)
 # -----------------------------
 store = {}
+
 def get_session_history(session_id: str):
     if session_id not in store:
         store[session_id] = InMemoryChatMessageHistory()
@@ -126,10 +127,21 @@ chat = RunnableWithMessageHistory(
 
 # -----------------------------
 # Session management for multi-user
+# CRITICAL: Each user/refresh gets a NEW session_id
+# State is NOT stored in Gradio history, only in this dict
+# When a user refreshes, they get a new session_id, old one is orphaned
 # -----------------------------
-sessions = {}  # maps session_key -> {"session_id": str, "fact_session": FactSession()}
+active_sessions = {}  # maps session_id -> {"fact_session": FactSession()}
 
-def phoenix_ai_response(user_input, session_id, fact_session):
+def phoenix_ai_response(user_input, session_id):
+    """Generate AI response for a specific session"""
+    if session_id not in active_sessions:
+        active_sessions[session_id] = {
+            "fact_session": FactSession()
+        }
+    
+    fact_session = active_sessions[session_id]["fact_session"]
+    
     # Get unused fact for this session
     fact = fact_session.get_unused_fact()
     if fact:
@@ -144,38 +156,28 @@ def phoenix_ai_response(user_input, session_id, fact_session):
     )
     return response.content
 
-sessions = {}  # maps session_uuid -> {"session_id": str, "fact_session": FactSession()}
+def create_new_session():
+    """Create a brand new session ID"""
+    return str(uuid.uuid4())
 
-def chat_wrapper(user_message, history=[]):
+# State for tracking current session per user
+class SessionState:
+    def __init__(self):
+        self.current_session_id = create_new_session()
+
+session_state = SessionState()
+
+def chat_wrapper(user_message):
     """
-    history: Gradio Chatbot history list
-    Each session gets its own session_id and FactSession
+    Simple chat wrapper - uses a persistent session_id until page refresh.
+    On page refresh, Gradio creates a new instance, so session_id is regenerated.
     """
-    # First message of a new session
-    if not history:
-        session_uuid = str(uuid.uuid4())
-        sessions[session_uuid] = {
-            "session_id": str(uuid.uuid4()),
-            "fact_session": FactSession()
-        }
-        # Store UUID in the list for tracking
-        history.append([None, None])  # placeholder to store session UUID
-        history[0][0] = session_uuid  # store session UUID
-    else:
-        session_uuid = history[0][0]
-
-    session_data = sessions.get(session_uuid)
-    session_id = session_data["session_id"]
-    fact_session = session_data["fact_session"]
-
+    session_id = session_state.current_session_id
+    
     # Get AI response
-    ai_response = phoenix_ai_response(user_message, session_id, fact_session)
-
-    # Append user and AI messages
-    history.append([user_message, ai_response])
-
-    return history, history
-
+    ai_response = phoenix_ai_response(user_message, session_id)
+    
+    return ai_response
 
 # -----------------------------
 # Gradio UI and theming
