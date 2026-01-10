@@ -221,7 +221,6 @@ with gr.Blocks(title="Eleazar Phoenix AI 🎂") as demo:
     gr.ChatInterface(
         fn=chat_wrapper,
         additional_inputs=[session_id_state],
-        additional_inputs_on_top=False,
         title="Eleazar Phoenix AI 🎂",
         description=description_text,
         examples=[
