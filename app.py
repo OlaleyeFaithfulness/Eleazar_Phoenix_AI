@@ -167,10 +167,11 @@ class SessionState:
 
 session_state = SessionState()
 
-def chat_wrapper(user_message):
+def chat_wrapper(user_message, history):
     """
     Simple chat wrapper - uses a persistent session_id until page refresh.
     On page refresh, Gradio creates a new instance, so session_id is regenerated.
+    history: Gradio passes this but we ignore it since we manage memory via session_id
     """
     session_id = session_state.current_session_id
     
