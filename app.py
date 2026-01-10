@@ -11,8 +11,10 @@ import gradio as gr
 # -----------------------------
 # Load API key
 # -----------------------------
-load_dotenv()
-api_key = os.environ["GROQ_API_KEY"]
+import os
+
+api_key = os.getenv("OPENAI_API_KEY")
+
 
 model = ChatOpenAI(
     model="llama-3.1-8b-instant",
