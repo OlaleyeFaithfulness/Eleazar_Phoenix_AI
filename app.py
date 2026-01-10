@@ -110,6 +110,9 @@ chain = prompt | model
 
 # -----------------------------
 # In-memory memory store (per session)
+# Each unique session_id gets its own conversation history
+# On refresh/new tab, Gradio creates a new session_id
+# Old session_id is orphaned and memory is lost
 # -----------------------------
 store = {}
 
@@ -125,11 +128,7 @@ chat = RunnableWithMessageHistory(
     history_messages_key="history",
 )
 
-# -----------------------------
-# Session management for multi-user
-# Each session_id is unique per user/browser/refresh
-# Memory persists within a session but is isolated between sessions
-# -----------------------------
+# Session tracking
 active_sessions = {}
 
 def phoenix_ai_response(user_input, session_id):
@@ -155,24 +154,19 @@ def phoenix_ai_response(user_input, session_id):
     )
     return response.content
 
-def chat_wrapper(user_message, history, session_id_state):
+def chat_wrapper(user_message, history, request: gr.Request):
     """
-    Chat wrapper that maintains per-user session isolation.
-    - Generates new session_id on first message (when session_id_state is None)
-    - Maintains memory within the session
-    - Completely resets on refresh or new tab/device
+    Chat wrapper that uses Gradio's built-in session ID.
+    Each unique browser/tab/device gets a unique session_id automatically.
+    On refresh, Gradio assigns a new session_id.
     """
-    # If no session exists yet, create a new one
-    if session_id_state is None or session_id_state == "":
-        session_id_state = str(uuid.uuid4())
-    
-    session_id = session_id_state
+    # Get unique session ID from Gradio's request
+    session_id = request.session_hash if hasattr(request, 'session_hash') else str(uuid.uuid4())
     
     # Get AI response
     ai_response = phoenix_ai_response(user_message, session_id)
     
-    # Return response and updated session state
-    return ai_response, session_id_state
+    return ai_response
 
 # -----------------------------
 # Gradio UI and theming
@@ -216,11 +210,8 @@ footer_text = "Developed by Olaleye Faithfulness Ibukun"
 
 # Launch Gradio app
 with gr.Blocks(title="Eleazar Phoenix AI 🎂") as demo:
-    session_id_state = gr.State(value="")
-    
     gr.ChatInterface(
         fn=chat_wrapper,
-        additional_inputs=[session_id_state],
         title="Eleazar Phoenix AI 🎂",
         description=description_text,
         examples=[
