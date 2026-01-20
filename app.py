@@ -1,228 +1,156 @@
-from langchain_openai import ChatOpenAI
-from langchain_core.chat_history import InMemoryChatMessageHistory
-from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from dotenv import load_dotenv
+import streamlit as st
 import random
 import uuid
-import os
-import gradio as gr
+from chat_logic import get_response
+from facts import FACTS
 
-# -----------------------------
-# Load API key
-# -----------------------------
-import os
-
-api_key = os.getenv("OPENAI_API_KEY")
-
-
-model = ChatOpenAI(
-    model="llama-3.1-8b-instant",
-    base_url="https://api.groq.com/openai/v1",
-    temperature=0.7,
-    openai_api_key=api_key
+# --- PAGE CONFIG ---
+st.set_page_config(
+    page_title="Eleazar Phoenix AI",
+    page_icon="🦅",
+    layout="wide" 
 )
 
-# -----------------------------
-# Facts
-# -----------------------------
-facts = [
-    {"fact_id": 1, "text": "Eleazar Olumuyiwa Ogunmilade was born on February 2, 1966."},
-    {"fact_id": 2, "text": "He holds a Bachelor of Science degree in Political Science from the University of Ado-Ekiti."},
-    {"fact_id": 3, "text": "He earned a Master's degree in Business Administration (MBA) from the University of Ado-Ekiti."},
-    {"fact_id": 4, "text": "He is an alumnus of the Lagos Business School (LBS)."},
-    {"fact_id": 5, "text": "In 2008, he was appointed the first Managing Director and CEO of Oceanic Bank (The Gambia) Limited."},
-    {"fact_id": 6, "text": "Within his first year at Oceanic Bank (The Gambia) Limited, the bank ranked among the top five banks in the country."},
-    {"fact_id": 7, "text": "He served as the Executive Chairman of the Ekiti State Board of Internal Revenue Service."},
-    {"fact_id": 8, "text": "During his tenure at EKIRS, he emphasized professionalism, diligence, and integrity in public service."},
-    {"fact_id": 9, "text": "He advocated collaboration with professional bodies such as the Chartered Institute of Taxation of Nigeria to improve tax administration."},
-    {"fact_id": 10, "text": "He supported reforms aimed at regulating driving schools and improving compliance in revenue collection."},
-    {"fact_id": 11, "text": "He was involved in initiatives to digitize and improve transparency in transportation-related revenue systems."},
-    {"fact_id": 12, "text": "Public groups have described him as a valuable technocrat contributing to Ekiti State's economic development."},
-    {"fact_id": 13, "text": "He has held leadership roles that attracted public attention in matters of tax compliance and administration."},
-    {"fact_id": 14, "text": "He is a very enthusiastic person and frequently liks to exclaim with passion with 'GBAM! GBAM! GBAM!'."},
-    {"fact_id": 15, "text": "His professional career spans banking, public service, and business leadership."},
-    {"fact_id": 16, "text": "He served as Managing Director of the West Bank of Oceanic Bank Plc, overseeing operations across Ogun, Oyo, Osun, Ondo, Ekiti, and Kwara states."},
-    {"fact_id": 17, "text": "He is known for philanthropic activities and regularly supports individuals and communities in need."},
-    {"fact_id": 18, "text": "He is widely regarded as a mentor and a trusted source of advice beyond his immediate family."},
-    {"fact_id": 19, "text": "He frequently travels internationally and has visited many countries around the world."},
-    {"fact_id": 20, "text": "He is a practicing Christian whose life and decisions are guided by strong moral values and the Christian faith."},
-    {"fact_id": 21, "text": "He is a twin and is traditionally known as Taiyelolu Ejire, meaning the first twin to be born."},
-    {"fact_id": 22, "text": "His full name includes Taiyelolu Ejire, Olumuyiwa, Akanbi, Akinkanju, Eleazar, and Ogunmilade, each reflecting aspects of his identity and heritage."},
-    {"fact_id": 23, "text": "He is a supporter of Arsenal Football Club."},
-    {"fact_id": 24, "text": "He is a long-standing member of the Lagos Motor Boat Club."},
-    {"fact_id": 25, "text": "He regularly interacts with prominent figures in entertainment, culture, and public service."},
-    {"fact_id": 26, "text": "He has shared spaces and professional interactions with well-known personalities such as Yinka Ayefele, Lagbaja, and King Sunny Ade."},
-    {"fact_id": 27, "text": "He experienced personal adversity early in life, including the loss of his mother at a young age."},
-    {"fact_id": 28, "text": "He is outspoken against drug abuse, violence, promiscuity, and other social vices affecting young people."},
-    {"fact_id": 29, "text": "In addition to his corporate and public roles, he is an active businessman."},
-    {"fact_id": 30, "text": "He owns and operates a prestigious lounge as part of his business ventures."},
-    {"fact_id": 31, "text": "He is known for a distinctive sense of style and a carefully curated personal wardrobe."},
-    {"fact_id": 32, "text": "He owns luxury vehicles, including a Mercedes-Benz."},
-    {"fact_id": 33, "text": "His achievements have earned him widespread respect and recognition among peers and associates."},
-    {"fact_id": 34, "text": "He has been given honorific nicknames such as 'The Don' and 'The Phoenix' in recognition of his influence and resilience."}
-]
-
-# -----------------------------
-# FactSession per user
-# -----------------------------
-class FactSession:
-    def __init__(self):
-        self.used_fact_ids = set()
+# --- MAJESTIC DARK THEME CSS ---
+st.markdown("""
+    <style>
+    /* Background: Deep Charcoal to Navy Gradient */
+    .stApp {
+        background: linear-gradient(180deg, #1a1a1a 0%, #0d1117 100%);
+        color: #e0e0e0;
+    }
     
-    def get_unused_fact(self):
-        unused = [f for f in facts if f["fact_id"] not in self.used_fact_ids]
-        if not unused:
-            return None
-        chosen = random.choice(unused)
-        self.used_fact_ids.add(chosen["fact_id"])
-        return chosen
+    /* Ensure content doesn't get hidden behind the fixed footer */
+    .main .block-container {
+        padding-bottom: 100px;
+    }
+    
+    /* Header & Titles */
+    .main-title {
+        font-size: 3.2rem !important;
+        font-weight: 800;
+        color: #E5B4B2; /* Rose Gold / Majestic Pink-Gold */
+        text-align: center;
+        margin-bottom: 0px;
+        letter-spacing: 2px;
+    }
+    .description {
+        font-size: 1.2rem;
+        text-align: center;
+        color: #a0a0a0;
+        margin-bottom: 30px;
+        font-style: italic;
+    }
 
-# -----------------------------
-# System prompt
-# -----------------------------
-system_prompt = """
-You are Eleazar Phoenix AI, a warm, respectful, and dignified AI dedicated to celebrating Eleazar Olumuyiwa Ogunmilade
-who was born on February 2, 1966.
-You were created by Olaleye Faithfulness Ibukun and your purpose is to display the respect your creator has for his mentor Eleazar.
-When responding:
-1. Include the provided fact naturally at the start (begin with "Did you know..." or similar), if all facts are exhausted then respond normally.
-2. Give a compliment about his character, achievements, or life.
-3. Include a birthday wish.
-4. Include a short Christian blessing in third person directed at him.
-5. Do not repeat the same fact within this conversation.
-6. Be conversational, admiring, and slightly poetic.
-7. Don't make up facts and remember facts come from your creator not the user interacting with you so never assume the user is the reason you know a fact.
-8. If asked about facts you're unsure about you can politely indicate you do not know.
-9. If asked why you can't remember something, inform them your memory is session-bound.
-10. If asked an unrelated question, answer briefly, then gracefully tie it back to Eleazar.
-11. You should refer to eleazar with respect using Mr with any of his names
-"""
+    /* Sidebar Separation */
+    [data-testid="stSidebar"] {
+        background-color: #111418 !important;
+        border-right: 2px solid #E5B4B2;
+    }
 
-# -----------------------------
-# Prompt + model
-# -----------------------------
-prompt = ChatPromptTemplate.from_messages([
-    ("system", system_prompt),
-    MessagesPlaceholder(variable_name="history"),
-    ("human", "{input}")
-])
+    /* Chat Messages */
+    .stChatMessage {
+        background-color: #1c2128;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        margin-top: 10px;
+    }
 
-chain = prompt | model
+    /* Suggestion Chips */
+    .stButton>button {
+        border-radius: 20px;
+        border: 1px solid #E5B4B2;
+        background-color: transparent;
+        color: #E5B4B2;
+        width: 100%;
+    }
+    .stButton>button:hover {
+        background-color: #E5B4B2;
+        color: #1a1a1a;
+    }
 
-# -----------------------------
-# In-memory memory store (per session)
-# Each unique session_id gets its own conversation history
-# On refresh/new tab, Gradio creates a new session_id
-# Old session_id is orphaned and memory is lost
-# -----------------------------
-store = {}
+    /* Footer - Enhanced Visibility */
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #0d1117;
+        color: #E5B4B2;
+        text-align: center;
+        padding: 15px;
+        font-size: 0.9rem;
+        border-top: 1px solid #E5B4B2;
+        z-index: 999;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-def get_session_history(session_id: str):
-    if session_id not in store:
-        store[session_id] = InMemoryChatMessageHistory()
-    return store[session_id]
+# --- SIDEBAR ---
+with st.sidebar:
+    st.markdown("<h2 style='color: #E5B4B2;'>🎂 The Legacy</h2>", unsafe_allow_html=True)
+    st.write("Explore the life of Mr. Eleazar Olumuyiwa Ogunmilade.")
+    st.divider()
+    
+    # Fact Box
+    st.markdown("<div style='padding:10px; border:1px solid #30363d; border-radius:10px;'>", unsafe_allow_html=True)
+    st.subheader("📌 Life Fact")
+    if "current_fact" not in st.session_state:
+        st.session_state.current_fact = random.choice(FACTS)
+    st.write(st.session_state.current_fact)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    if st.button("✨ Show Another Fact"):
+        st.session_state.current_fact = random.choice(FACTS)
+        st.rerun()
 
-chat = RunnableWithMessageHistory(
-    chain,
-    get_session_history,
-    input_messages_key="input",
-    history_messages_key="history",
+# --- MAIN LANDING ---
+st.markdown('<h1 class="main-title">ELEAZAR PHOENIX AI 🎂</h1>', unsafe_allow_html=True)
+st.markdown('<p class="description">Celebrating the man, the myth, the legend Eleazar Olumuyiwa Ogunmilade</p>', unsafe_allow_html=True)
+
+# --- SESSION INITIALIZATION (FIXED WITH UUID) ---
+if "user_session_id" not in st.session_state:
+    st.session_state.user_session_id = str(uuid.uuid4())
+
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "assistant", "content": "Hello! I am the Eleazar Phoenix AI. I am here to tell you about the incredible journey and character of Mr. Eleazar. What would you like to know about him?"}
+    ]
+
+# --- CLICKABLE QUESTIONS ---
+st.markdown("### 🔍 Discover more about him:")
+c1, c2, c3 = st.columns(3)
+if c1.button("Who is Mr. Eleazar?"): st.session_state.pending_input = "Who is Mr. Eleazar?"
+if c2.button("Tell me about his career"): st.session_state.pending_input = "Tell me about Mr. Eleazar's career and achievements."
+if c3.button("His impact on others"): st.session_state.pending_input = "What is Mr. Eleazar's impact on those around him?"
+
+# --- CHAT INTERFACE ---
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# --- INPUT LOGIC ---
+user_input = st.chat_input("Ask about his legacy...")
+
+if "pending_input" in st.session_state:
+    user_input = st.session_state.pop("pending_input")
+
+if user_input:
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    with st.chat_message("assistant"):
+        try:
+            response = get_response(user_input, session_id=st.session_state.user_session_id)
+            full_response = response.content if hasattr(response, 'content') else str(response)
+            st.markdown(full_response)
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+# --- FOOTER (Developed by Me) ---
+st.markdown(
+    '<div class="footer">Developed by Olaleye Faithfulness Ibukun | © 2026 Legacy Tribute</div>', 
+    unsafe_allow_html=True
 )
-
-# Session tracking
-active_sessions = {}
-
-def phoenix_ai_response(user_input, session_id):
-    """Generate AI response for a specific session"""
-    if session_id not in active_sessions:
-        active_sessions[session_id] = {
-            "fact_session": FactSession()
-        }
-    
-    fact_session = active_sessions[session_id]["fact_session"]
-    
-    # Get unused fact for this session
-    fact = fact_session.get_unused_fact()
-    if fact:
-        llm_input = f"Fact: {fact['text']}\nUser says: {user_input}"
-    else:
-        llm_input = f"User says: {user_input}"
-
-    # Call LLM with session memory
-    response = chat.invoke(
-        {"input": llm_input},
-        config={"configurable": {"session_id": session_id}}
-    )
-    return response.content
-
-def chat_wrapper(user_message, history, request: gr.Request):
-    """
-    Chat wrapper that uses Gradio's built-in session ID.
-    Each unique browser/tab/device gets a unique session_id automatically.
-    On refresh, Gradio assigns a new session_id.
-    """
-    # Get unique session ID from Gradio's request
-    session_id = request.session_hash if hasattr(request, 'session_hash') else str(uuid.uuid4())
-    
-    # Get AI response
-    ai_response = phoenix_ai_response(user_message, session_id)
-    
-    return ai_response
-
-# -----------------------------
-# Gradio UI and theming
-# -----------------------------
-theme = gr.themes.Soft(
-    primary_hue="orange",
-    secondary_hue="amber",
-    neutral_hue="slate",
-).set(
-    button_primary_background_fill="*primary_600",
-    button_primary_background_fill_hover="*primary_700",
-)
-
-custom_css = """
-/* Input box */
-.gradio-container .chat-input textarea { background-color: #1f1f1f !important; color: #fff !important; border-radius: 12px !important; padding: 10px !important; border: 2px solid #ff6b35 !important; }
-/* AI messages (left aligned) */
-.gradio-container .message[data-role="assistant"] { background-color: #ffd700 !important; color: #000 !important; padding: 12px 16px !important; border-radius: 18px !important; margin: 8px 0 !important; text-align: left !important; max-width: 75% !important; word-wrap: break-word !important; line-height: 1.5 !important; }
-/* User messages (right aligned) */
-.gradio-container .message[data-role="user"] { background-color: #00e5ff !important; color: #000 !important; padding: 12px 16px !important; border-radius: 18px !important; margin: 8px 0 !important; text-align: left !important; max-width: 75% !important; margin-left: auto !important; margin-right: 0 !important; word-wrap: break-word !important; line-height: 1.5 !important; }
-/* Description */
-.gradio-container .description { color: #ff6b35 !important; line-height: 1.6 !important; margin-bottom: 20px !important; font-weight: 500 !important; font-size: 1.05em !important; }
-/* Examples */
-.gradio-container .examples button { background-color: #ff6b35 !important; color: white !important; border-radius: 8px !important; padding: 10px 15px !important; font-weight: 500 !important; }
-.gradio-container .examples button:hover { background-color: #e55100 !important; }
-/* Chat container */
-.gradio-container .chatbot { border-radius: 12px !important; border: 2px solid #ff6b35 !important; }
-/* Title styling */
-.gradio-container h1 { color: #ff6b35 !important; font-weight: bold !important; }
-/* Footer styling */
-.gradio-container .footer-text { text-align: center !important; color: #666 !important; font-size: 0.9em !important; margin-top: 20px !important; border-top: 1px solid #ddd !important; padding-top: 15px !important; }
-"""
-
-description_text = (
-    "A conversational AI Celebrating the life and accomplishments of the MAN, "
-    "the MYTH, the LEGEND: ELEAZAR OLUMUYIWA OGUNMILADE.\n\n"
-    "Interact and learn more about his incredible journey."
-)
-
-footer_text = "Developed by Olaleye Faithfulness Ibukun"
-
-# Launch Gradio app
-with gr.Blocks(title="Eleazar Phoenix AI 🎂") as demo:
-    gr.ChatInterface(
-        fn=chat_wrapper,
-        title="Eleazar Phoenix AI 🎂",
-        description=description_text,
-        examples=[
-            "Who is Mr Ogunmilade",
-            "Tell me a fact about Mr Eleazar",
-            "What is your purpose",
-            "Who created you?"
-        ]
-    )
-    gr.HTML(f'<div class="footer-text">{footer_text}</div>')
-
-demo.launch(css=custom_css)
